@@ -4,6 +4,8 @@ import controladores.controlador_artistas as controlador_artistas
 import controladores.controlador_users as controlador_users
 import clases.clase_disco as clase_disco
 import clases.clase_pedido as clase_pedido
+import clases.clase_pelicula as clase_pelicula
+import controladores.controlador_pelicula as controlador_pelicula
 from flask_jwt import JWT, jwt_required, current_identity
 from hashlib import sha256
 import random
@@ -246,6 +248,51 @@ def logout():
     resp = make_response(redirect("/login"))
     resp.set_cookie('token', "", expires=0)
     return resp
+
+#####APIS PELICULA########
+@app.route("/api_marcorioja_guardarpelicula", methods=["POST"])
+@jwt_required()
+def api_guardar_pelicula():
+    rpta = dict()
+    try:
+        nombre = request.json["nombre"]
+        director = request.json["director"]
+        productora = request.json["productora"]
+        anioproduccion = request.json["anioproduccion"]
+        aniolanzamiento = request.json["aniolanzamiento"]
+        weboficial = request.json["weboficial"]
+        idgenerado = controlador_pelicula.insertar_pelicula(nombre, director, productora, anioproduccion, aniolanzamiento, weboficial)
+
+        rpta["status"] = 1
+        rpta["message"] = "Registro correcto"
+        rpta["data"] = {"idgenerado": idgenerado}
+    except Exception as e:
+        rpta["status"] = 0
+        rpta["message"] = "Ocurrió un problema: " + repr(e)
+        rpta["data"] = dict()
+    return jsonify(rpta)
+
+@app.route("/api_marcorioja_obtenerpeliculas")
+@jwt_required()
+def api_obtener_peliculas():
+    rpta = dict()
+    try:
+        listapeliculas = list()
+        peliculas = controlador_pelicula.obtener_peliculas()
+
+        for pelicula in peliculas:
+            objPelicula = clase_pelicula.clsPelicula(pelicula[0], pelicula[1], pelicula[2], pelicula[3], pelicula[4], pelicula[5], pelicula[6])
+            listapeliculas.append(objPelicula.dicpelicula)
+
+        rpta["status"] = 1
+        rpta["message"] = "Listado correcto"
+        rpta["data"] = listapeliculas
+        return jsonify(rpta)
+    except Exception as e:
+        rpta["status"] = 0
+        rpta["message"] = f"Problemas en el servicio web: {str(e)}"
+        rpta["data"] = dict()
+        return jsonify(rpta)
 
 # Iniciar el servidor
 if __name__ == "__main__":
