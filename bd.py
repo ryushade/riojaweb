@@ -1,7 +1,7 @@
 import pymysql
 
 def obtener_conexion():
-    return pymysql.connect(host='dawb2024iiusat.mysql.pythonanywhere-services.com',
-                                user='dawb2024iiusat',
-                                password='abcDEF$123',
-                                db='dawb2024iiusat$discos')
+    return pymysql.connect(host='riojadawb.mysql.pythonanywhere-services.com',
+                                user='riojadawb',
+                                password='23bf1a0d2',
+                                db='riojadawb$discos')
