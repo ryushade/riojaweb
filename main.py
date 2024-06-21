@@ -29,13 +29,15 @@ class User(object):
 #userid_table = {u.id: u for u in users}
 
 def authenticate(username, password):
-    # user = username_table.get(username, None)
     userfrombd = controlador_users.obtener_user_por_username(username)
-    user = None
     if userfrombd is not None:
         user = User(userfrombd[0], userfrombd[1], userfrombd[2])
-    if user is not None and (user.password.encode('utf-8') == password.encode('utf-8')):
-        return user
+        # Hash de la contraseña ingresada para comparar con el hash guardado
+        hashed_input_password = sha256(password.encode('utf-8')).hexdigest()
+        if user.password == hashed_input_password:
+            return user
+    return None
+
 
 def identity(payload):
     user_id = payload['identity']
