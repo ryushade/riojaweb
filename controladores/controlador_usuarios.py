@@ -71,7 +71,7 @@ def verificar_codigo(username, codeverify):
             cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
             user = cursor.fetchone()
 
-            if user and user['codigo_verificacion'] == codeverify:
+            if user and int(user['codigo_verificacion']) == int(codeverify):
                 cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
                 verificado = True
         conexion.commit()
