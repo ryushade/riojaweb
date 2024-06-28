@@ -31,13 +31,13 @@ def obtener_user_por_id(user_id):
         print(f"Error en obtener_user_por_id: {e}")
         return None
 
-def registrar_usuario(username, hashed_password):
+def registrar_usuario(username, hashed_password, codigo_verificacion):
     try:
         conexion = obtener_conexion()
         user_id = None
         with conexion.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (usuario, password_hash, codigo_verificacion, estado_verificado) VALUES (%s, %s, %s, %s)", 
-                           (username, hashed_password, 0, False))
+                           (username, hashed_password, codigo_verificacion, False))
             user_id = cursor.lastrowid
         conexion.commit()
         conexion.close()
