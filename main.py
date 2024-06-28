@@ -202,89 +202,8 @@ def api_guardardisco():
     return rpta
 
 ##### APIS mascotaS #####
-@app.route("/api_marcelnunez_guardarmascotas", methods=["POST"])
-@jwt_required()
-def api_marcelnunez_guardarmascota():
-    rpta=dict()
-    try:
-        nombre = request.json["nombre"]
-        descripcion = request.json["descripcion"]
-        raza = request.json["raza"]
-        peso = request.json["peso"]
-        cantidad_visitas = request.json["cantidad_visitas"]
-        edad = request.json["edad"]
-        enlace_informacion = request.json["enlace_informacion"]
-        enlace_imagen = request.json["enlace_imagen"]
-        idgenerado = controlador_mascotas.insertar_mascota(nombre, descripcion, raza, peso, cantidad_visitas, edad, enlace_informacion, enlace_imagen)
-        rpta["data"]= {"idgenerado" : idgenerado}
-        rpta["status"]=1
-        rpta["message"]="Registro correcto"
-    except Exception as e:
-        rpta["data"]=dict()
-        rpta["status"]=0
-        rpta["message"]="Ocurrió un problema: " + repr(e)
-    return rpta
 
-@app.route("/api_marcelnunez_obtenermascotas")
-@jwt_required()
-def api_marcelnunez_obtenermascotas():
-    rpta = dict()
-    try:
-        listamascotas = []
-        mascotas = controlador_mascotas.obtener_mascota()
-        for mascota in mascotas:
-            try:
-                objmascota = clase_mascota.clsMascota(
-                    mascota[0], mascota[1], mascota[2],
-                    mascota[3], mascota[4], mascota[5],
-                    mascota[6], mascota[7], mascota[8]
-                )
-                listamascotas.append(objmascota.diccmascota.copy())
-            except Exception as e:
-                print(f"Error procesando mascota: {e}")
-        rpta["data"] = listamascotas
-        rpta["status"] = 1
-        rpta["message"] = "Listado correcto"
-        return jsonify(rpta)
-    except Exception as e:
-        rpta["data"] = []
-        rpta["status"] = 0
-        rpta["message"] = "Ocurrió un problema: " + repr(e)
-    return jsonify(rpta)
 
-@app.route("/api_marcelnunez_actualizarmascotas/<int:id>", methods=["PUT"])
-@jwt_required()
-def api_actualizarmascota(id):
-    rpta = dict()
-    try:
-        nombre = request.json["nombre"]
-        descripcion = request.json["descripcion"]
-        raza = request.json["raza"]
-        peso = request.json["peso"]
-        cantidad_visitas = request.json["cantidad_visitas"]
-        edad = request.json["edad"]
-        enlace_informacion = request.json["enlace_informacion"]
-        enlace_imagen = request.json["enlace_imagen"]
-        controlador_mascotas.actualizar_mascota(nombre, descripcion, raza, peso, cantidad_visitas, edad, enlace_informacion, enlace_imagen, id)
-        rpta["code"] = 1
-        rpta["message"] = "mascota actualizado correctamente"
-    except Exception as e:
-        rpta["code"] = 0
-        rpta["message"] = "Ocurrió un problema: " + repr(e)
-    return jsonify(rpta)
-
-@app.route("/api_marcelnunez_eliminarmascotas/<int:id>", methods=["DELETE"])
-@jwt_required()
-def api_eliminarmascota(id):
-    rpta = dict()
-    try:
-        controlador_mascotas.eliminar_mascota(id)
-        rpta["code"] = 1
-        rpta["message"] = "mascota eliminado correctamente"
-    except Exception as e:
-        rpta["code"] = 0
-        rpta["message"] = "Ocurrió un problema: " + repr(e)
-    return jsonify(rpta)
 
 
 @app.route("/api_registrarusuario_p3", methods=["POST"])
