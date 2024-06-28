@@ -79,18 +79,21 @@ def api_registrarusuario_p3():
 def api_confirmarusuario_p3():
     try:
         data = request.get_json()
+        print(f"Datos recibidos: {data}")
         usuario = data['usuario']
         codeverify = int(data['codeverify'])
+        print(f"Usuario: {usuario}, Código de Verificación: {codeverify}")
 
         if controlador_usuarios.verificar_codigo(usuario, codeverify):
             return jsonify({"code": 1, "data": {}, "message": "Usuario verificado correctamente"})
         else:
+            print(f"Código de verificación incorrecto para el usuario: {usuario}")
             return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
     except Exception as e:
-        print(f"Error in api_confirmarusuario_p3: {e}")
+        print(f"Error en api_confirmarusuario_p3: {e}")
         return jsonify({
             "code": 0,
-            "message": "Error al confirmar usuario"
+            "message": f"Error al confirmar usuario: {str(e)}"
         }), 500
 
 @app.route('/api_listarusuarios_p3', methods=['GET'])
