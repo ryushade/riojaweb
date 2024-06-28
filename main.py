@@ -55,84 +55,37 @@ jwt = JWT(app, authenticate, identity)
 ### Rutas para Usuarios ###
 @app.route('/api_registrarusuario_p3', methods=['POST'])
 def api_registrarusuario_p3():
+    rpta=dict()
     try:
-        data = request.get_json()
-        print(f"Datos recibidos: {data}")
-        usuario = data['usuario']
-        password = data['pass']
-        hashed_password = sha256(password.encode()).hexdigest()
-        print(f"Usuario: {usuario}, Hashed Password: {hashed_password}")
-
-        user_id = controlador_usuarios.registrar_usuario(usuario, hashed_password)
-        print(f"ID de usuario registrado: {user_id}")
-
-        codeverify = random.randint(100000, 999999)
-        controlador_usuarios.guardar_codigo_verificacion(user_id, codeverify)
-        print(f"Código de verificación generado: {codeverify}")
-
-        return jsonify({
-            "code": 1,
-            "data": {
-                "usuario": usuario,
-                "codeverify": codeverify
-            },
-            "message": "Usuario registrado correctamente"
-        })
+        username = request.json["username"]
+        passw = request.json["passw"]
+        codeverify = controlador_usuarios.insertar_usuario(username, passw)
+        rpta["code"] = 1
+        rpta["data"] = {"usuario" : username,
+                         "codeverify" : codeverify}
+        rpta["message"] = "Usuario Registrado correctamente"
     except Exception as e:
-        print(f"Error en api_registrarusuario_p3: {e}")
-        return jsonify({
-            "code": 0,
-            "message": f"Error al registrar usuario: {str(e)}"
-        }), 500
+        rpta["code"] = 0
+        rpta["data"] = dict()
+        rpta["message"] = "Ocurrió un problema: " + repr(e)
+    return rpta
+
 
 @app.route('/api_confirmarusuario_p3', methods=['POST'])
 def api_confirmarusuario_p3():
-    rpta = {}
+    rpta=dict()
     try:
-        username = request.json.get("username")
-        codeverify = request.json.get("codeverify")
-
-        if username and codeverify:
-            # Llamar a la función para verificar el usuario
-            if controlador_usuarios.verificar_usuario(username, codeverify):
-                rpta["code"] = 1
-                rpta["data"] = {}
-                rpta["message"] = "Usuario verificado correctamente"
-            else:
-                rpta["code"] = 0
-                rpta["data"] = {}
-                rpta["message"] = "Código de verificación incorrecto para el usuario"
-        else:
-            rpta["code"] = 0
-            rpta["data"] = {}
-            rpta["message"] = "Faltan datos de usuario o código de verificación"
-
+        username = request.json["username"]
+        codeverify = request.json["codeverify"]
+        controlador_usuarios.verificar_usuario(username, codeverify)
+        rpta["code"] = 1
+        rpta["data"] = {}
+        rpta["message"] = "Usuario verificado correctamente"
     except Exception as e:
         rpta["code"] = 0
-        rpta["data"] = {}
+        rpta["data"] = dict()
         rpta["message"] = "Ocurrió un problema: " + repr(e)
-
-    return jsonify(rpta)
-
-
-@app.route('/api_listarusuarios_p3', methods=['GET'])
-@jwt_required()
-def api_listarusuarios_p3():
-    try:
-        usuarios = controlador_usuarios.obtener_usuarios_verificados()
-        data = [{"email": u['usuario'], "password": u['password_hash']} for u in usuarios]
-
-        return jsonify({
-            "code": 1,
-            "data": data,
-            "message": "Listado correcto de usuarios"
-        })
-    except Exception as e:
-        print(f"Error en api_listarusuarios_p3: {e}")
-        return jsonify({
-            "code": 0,
-            "message": "Error al listar usuarios"
-        }), 500
+    return rpta
 
 ### Rutas para Discos ###
 @app.route("/agregar_disco")
