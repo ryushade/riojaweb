@@ -71,6 +71,25 @@ def verificar_codigo(username, codeverify):
             cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
             user = cursor.fetchone()
 
+            # Convertir a int si es necesario para asegurar la comparación correcta
+            if user and int(user['codigo_verificacion']) == int(codeverify):
+                cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
+                verificado = True
+        conexion.commit()
+        conexion.close()
+        return verificado
+    except Exception as e:
+        print(f"Error en verificar_codigo: {e}")
+        return False
+    
+def verificar_codigo(username, codeverify):
+    try:
+        conexion = obtener_conexion()
+        verificado = False
+        with conexion.cursor() as cursor:
+            cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
+            user = cursor.fetchone()
+
             if user and int(user['codigo_verificacion']) == int(codeverify):
                 cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
                 verificado = True
