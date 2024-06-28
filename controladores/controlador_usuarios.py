@@ -37,21 +37,21 @@ def generar_codigo_verificacion():
     # Generar un código de verificación aleatorio de longitud 6
     return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(6))
 
-def registrar_usuario(username, hashed_password):
+def registrar_usuario(username, hashed_password, codigo_verificacion):
     try:
         conexion = obtener_conexion()
-        codigo_verificacion = generar_codigo_verificacion()
         user_id = None
         with conexion.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (usuario, password_hash, codigo_verificacion, estado_verificado) VALUES (%s, %s, %s, %s)", 
-                           (username, hashed_password, codigo_verificacion, False))
+                           (username, hashed_password, int(codigo_verificacion), False))
             user_id = cursor.lastrowid
         conexion.commit()
         conexion.close()
-        return user_id, codigo_verificacion
+        return user_id
     except Exception as e:
         print(f"Error en registrar_usuario: {e}")
-        return None, None
+        return None
+
 
 def guardar_codigo_verificacion(user_id, codeverify):
     try:
