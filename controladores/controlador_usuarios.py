@@ -58,15 +58,20 @@ def verificar_codigo(username, codeverify):
         with conexion.cursor() as cursor:
             cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
             user = cursor.fetchone()
-            if user and user['codigo_verificacion'] == codeverify:
-                cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
-                verificado = True
+            print(f"Usuario encontrado: {user}")
+
+            if user:
+                print(f"Código de verificación en la BD: {user['codigo_verificacion']}, Código proporcionado: {codeverify}")
+                if user['codigo_verificacion'] == codeverify:
+                    cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
+                    verificado = True
         conexion.commit()
         conexion.close()
         return verificado
     except Exception as e:
         print(f"Error en verificar_codigo: {e}")
         return False
+
 
 def obtener_usuarios_verificados():
     try:
