@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, flash, jsonify, mak
 import controladores.controlador_discos as controlador_discos
 import controladores.controlador_artistas as controlador_artistas
 import controladores.controlador_users as controlador_users
+import controladores.controlador_usuarios as controlador_usuarios
 import clases.clase_disco as clase_disco
 import clases.clase_pedido as clase_pedido
 import clases.clase_pelicula as clase_pelicula
@@ -163,9 +164,8 @@ def api_registrarusuario_p3():
     usuario = data['usuario']
     password = data['pass']
     hashed_password = sha256(password.encode()).hexdigest()
-    user_id = controlador_users.registrar_usuario(usuario, hashed_password)
+    user_id = controlador_usuarios.registrar_usuario(usuario, hashed_password)
     codeverify = random.randint(100000, 999999)
-
     controlador_users.guardar_codigo_verificacion(user_id, codeverify)
 
     return jsonify({
@@ -176,30 +176,6 @@ def api_registrarusuario_p3():
         },
         "message": "Usuario registrado correctamente"
     })
-
-@app.route('/api_confirmarusuario_p3', methods=['POST'])
-def api_confirmarusuario_p3():
-    data = request.get_json()
-    usuario = data['usuario']
-    codeverify = int(data['codeverify'])
-
-    if controlador_users.verificar_codigo(usuario, codeverify):
-        return jsonify({"code": 1, "data": {}, "message": "Usuario verificado correctamente"})
-    else:
-        return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
-
-@app.route('/api_listarusuarios_p3', methods=['GET'])
-@jwt_required()
-def api_listarusuarios_p3():
-    usuarios = controlador_users.obtener_usuarios_verificados()
-    data = [{"email": u['email'], "password": u['password']} for u in usuarios]
-
-    return jsonify({
-        "code": 1,
-        "data": data,
-        "message": "Listado correcto de usuarios"
-    })
-
 
 @jwt_required()
 def api_obtenerdiscos():
