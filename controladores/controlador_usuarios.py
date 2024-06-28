@@ -1,64 +1,86 @@
-    from bd import obtener_conexion
-    import random
-    import hashlib
+from bd import obtener_conexion
 
-    def generar_codverificacion():
-        return random.randint(100000, 999999)
+def obtener_todos_los_usuarios():
+    conexion = obtener_conexion()
+    users = []
+    with conexion.cursor() as cursor:
+        cursor.execute("SELECT usuario, pass FROM users")
+        users = cursor.fetchall()
+    conexion.close()
+    return users
 
-    def encript_passw(passw):
-        return hashlib.sha256(passw.encode()).hexdigest()
+def actualizar_codeverify_user(username, codeverify):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("UPDATE users SET codeverify = %s WHERE usuario = %s",
+                       (codeverify, username))
+    conexion.commit()
+    conexion.close()
 
-    def insertar_usuario(username, passw):
-        codeverify=generar_codverificacion()
-        estado="I"
-        epassw=encript_passw(passw)
-        conexion = obtener_conexion()
-        with conexion.cursor() as cursor:
-            cursor.execute("INSERT INTO usuarios(username, passw, codeverify, estado) values (%s, %s, %s, %s)",
-                            (username, epassw, codeverify, estado))
-        conexion.commit()
-        conexion.close()
-        return codeverify
+def confirmar_user(username):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("UPDATE users SET confirmed = TRUE WHERE usuario = %s",
+                       (username,))
+    conexion.commit()
+    conexion.close()
 
+def verificar_codeverify_user(username, codeverify):
+    conexion = obtener_conexion()
+    user = None
+    with conexion.cursor() as cursor:
+        cursor.execute("SELECT * FROM users WHERE usuario = %s AND codeverify = %s",
+                       (username, codeverify))
+        user = cursor.fetchone()
+    conexion.close()
+    return user
 
-    def verificar_usuario(username, codeverify):
-        conexion = obtener_conexion()
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM usuarios WHERE username = %s AND codeverify = %s", (username, codeverify))
-            user = cursor.fetchone()
-            if user:
-                cursor.execute("UPDATE usuarios SET estado = %s WHERE username = %s", ("A", username))
-                conexion.commit()
-                return True
-            else:
-                return False
-
-    def listarusuarios():
-        conexion = obtener_conexion()
-        usuarios = []
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT* FROM usuarios where estado='A'")
-            usuarios = cursor.fetchall()
-        conexion.close()
-        return usuarios
-
-    def obtener_usuario_por_username(username):
-        conexion = obtener_conexion()
-        user = None
-        with conexion.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, username, passw FROM usuarios where username = %s and estado='A'", (username,))
-            user = cursor.fetchone()
-        conexion.close()
-        return user
+def obtener_user_confirmado(username, password):
+    conexion = obtener_conexion()
+    user = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "SELECT * FROM users WHERE usuario = %s AND pass = %s AND confirmed = TRUE", 
+            (username, password)
+        )
+        user = cursor.fetchone()
+    conexion.close()
+    return user
 
 
-    def obtener_usuario_por_id(id):
-        conexion = obtener_conexion()
-        user = None
-        with conexion.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, username, passw FROM usuarios WHERE id = %s", (id,))
-            user = cursor.fetchone()
-        conexion.close()
-        return user
+def obtener_user_por_username(username):
+    conexion = obtener_conexion()
+    user= None
+    with conexion.cursor() as cursor:
+        cursor.execute("SELECT id, usuario, pass, token,codeverify FROM users WHERE usuario = %s",(username,))
+        user = cursor.fetchone()
+    conexion.close()
+    return user
+
+def obtener_user_por_id(id):
+    conexion = obtener_conexion()
+    user = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, usuario, pass FROM users WHERE id = %s", (id,))
+        user = cursor.fetchone()
+    conexion.close()
+    return user
+
+def insertar_user(username, epassword):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("INSERT INTO users(usuario, pass) VALUES (%s, %s)",
+                       (username, epassword))
+    conexion.commit()
+    conexion.close()
+
+def actualizar_token_user(username, token):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("UPDATE users SET token =%s WHERE usuario = %s ",
+                       (token, username))
+    conexion.commit()
+    conexion.close()
+
+
