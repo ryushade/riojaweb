@@ -163,9 +163,7 @@ def api_registrarusuario_p3():
     usuario = data['usuario']
     password = data['pass']
     hashed_password = sha256(password.encode()).hexdigest()
-
-    # Supongamos que 'insertar_user' devuelve el ID del usuario recién insertado
-    user_id = controlador_users.insertar_user(usuario, hashed_password)
+    user_id = controlador_users.registrar_usuario(usuario, hashed_password)
     codeverify = random.randint(100000, 999999)
 
     controlador_users.guardar_codigo_verificacion(user_id, codeverify)
