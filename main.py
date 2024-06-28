@@ -32,7 +32,7 @@ def authenticate(username, password):
     user = controlador_users.obtener_user_por_username(username)
     if user and sha256(password.encode()).hexdigest() == user.password and user.verificado:
         return User(user.id, username, user.password)
-        
+
 
 
 def identity(payload):
