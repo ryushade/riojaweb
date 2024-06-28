@@ -160,11 +160,12 @@ def api_pruebajson():
 @app.route('/api_registrarusuario_p3', methods=['POST'])
 def api_registrarusuario_p3():
     data = request.get_json()
-    username = data['usuario']
+    usuario = data['usuario']
     password = data['pass']
     hashed_password = sha256(password.encode()).hexdigest()
 
-    user_id = controlador_users.insertar_user(username, hashed_password)
+    # Supongamos que 'insertar_user' devuelve el ID del usuario recién insertado
+    user_id = controlador_users.insertar_user(usuario, hashed_password)
     codeverify = random.randint(100000, 999999)
 
     controlador_users.guardar_codigo_verificacion(user_id, codeverify)
@@ -172,25 +173,22 @@ def api_registrarusuario_p3():
     return jsonify({
         "code": 1,
         "data": {
-            "usuario": username,
+            "usuario": usuario,
             "codeverify": codeverify
         },
         "message": "Usuario registrado correctamente"
     })
 
-
 @app.route('/api_confirmarusuario_p3', methods=['POST'])
 def api_confirmarusuario_p3():
     data = request.get_json()
-    username = data['usuario']
+    usuario = data['usuario']
     codeverify = int(data['codeverify'])
 
-    # Comprobar el código de verificación y actualizar el estado del usuario.
-    if controlador_users.verificar_codigo(username, codeverify):
+    if controlador_users.verificar_codigo(usuario, codeverify):
         return jsonify({"code": 1, "data": {}, "message": "Usuario verificado correctamente"})
     else:
         return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
-
 
 @app.route('/api_listarusuarios_p3', methods=['GET'])
 @jwt_required()
@@ -205,7 +203,6 @@ def api_listarusuarios_p3():
     })
 
 
-@app.route("/api_obtenerdiscos")
 @jwt_required()
 def api_obtenerdiscos():
     rpta = dict()
