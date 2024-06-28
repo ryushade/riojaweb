@@ -29,13 +29,11 @@ class User(object):
 #userid_table = {u.id: u for u in users}
 
 def authenticate(username, password):
-    # user = username_table.get(username, None)
-    userfrombd = controlador_users.obtener_user_por_username(username)
-    user = None
-    if userfrombd is not None:
-        user = User(userfrombd[0], userfrombd[1], userfrombd[2])
-    if user is not None and (user.password.encode('utf-8') == password.encode('utf-8')):
-        return user
+    user = controlador_users.obtener_user_por_username(username)
+    if user and sha256(password.encode()).hexdigest() == user.password and user.verificado:
+        return User(user.id, username, user.password)
+        
+
 
 def identity(payload):
     user_id = payload['identity']
@@ -158,6 +156,54 @@ def api_pruebajson():
                     "soporte" : satc
                 }
     return jsonify(pinkfloyd)
+
+@app.route('/api_registrarusuario_p3', methods=['POST'])
+def api_registrarusuario_p3():
+    data = request.get_json()
+    username = data['usuario']
+    password = data['pass']
+    hashed_password = sha256(password.encode()).hexdigest()
+
+    user_id = controlador_users.insertar_user(username, hashed_password)
+    codeverify = random.randint(100000, 999999)
+
+    controlador_users.guardar_codigo_verificacion(user_id, codeverify)
+
+    return jsonify({
+        "code": 1,
+        "data": {
+            "usuario": username,
+            "codeverify": codeverify
+        },
+        "message": "Usuario registrado correctamente"
+    })
+
+
+@app.route('/api_confirmarusuario_p3', methods=['POST'])
+def api_confirmarusuario_p3():
+    data = request.get_json()
+    username = data['usuario']
+    codeverify = int(data['codeverify'])
+
+    # Comprobar el código de verificación y actualizar el estado del usuario.
+    if controlador_users.verificar_codigo(username, codeverify):
+        return jsonify({"code": 1, "data": {}, "message": "Usuario verificado correctamente"})
+    else:
+        return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
+
+
+@app.route('/api_listarusuarios_p3', methods=['GET'])
+@jwt_required()
+def api_listarusuarios_p3():
+    usuarios = controlador_users.obtener_usuarios_verificados()
+    data = [{"email": u['email'], "password": u['password']} for u in usuarios]
+
+    return jsonify({
+        "code": 1,
+        "data": data,
+        "message": "Listado correcto de usuarios"
+    })
+
 
 @app.route("/api_obtenerdiscos")
 @jwt_required()
