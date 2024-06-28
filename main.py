@@ -1,3 +1,4 @@
+import hashlib
 from flask import Flask, request, jsonify, render_template, redirect, make_response
 from flask_jwt import JWT, jwt_required, current_identity
 from hashlib import sha256
@@ -86,6 +87,21 @@ def api_confirmarusuario_p3():
         rpta["data"] = dict()
         rpta["message"] = "Ocurrió un problema: " + repr(e)
     return rpta
+
+@app.route('/api_listarusuarios_p3', methods=['GET'])
+def api_listarusuarios_p3():
+    rpta = {"code": 1, "data": [], "message": "Listado correcto de usuarios"}
+    try:
+        usuarios = controlador_usuarios.listar_usuarios()
+        for usuario in usuarios:
+            # For security reasons, only send username and hashed password
+            hashed_passw = hashlib.sha256(usuario['passw'].encode()).hexdigest()
+            rpta["data"].append({"email": usuario['username'], "password": hashed_passw})
+    except Exception as e:
+        rpta["code"] = 0
+        rpta["message"] = "Ocurrió un problema: " + repr(e)
+    return jsonify(rpta)
+
 
 ### Rutas para Discos ###
 @app.route("/agregar_disco")
