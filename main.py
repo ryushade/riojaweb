@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify, render_template, redirect, make_respo
 from flask_jwt import JWT, jwt_required, current_identity
 from hashlib import sha256
 import random
+import datetime
+import jwt
 import controladores.controlador_usuarios as controlador_usuarios
 import controladores.controlador_discos as controlador_discos
 
@@ -22,8 +24,8 @@ class User(object):
 def authenticate(username, password):
     try:
         user = controlador_usuarios.obtener_user_por_username(username)
-        if user and sha256(password.encode()).hexdigest() == user['password_hash'] and user['estado_verificado']:
-            return User(user['usuario'], username, user['password_hash'])
+        if user and sha256(password.encode()).hexdigest() == user.password_hash and user.estado_verificado:
+            return User(user.usuario, username, user.password_hash)
     except Exception as e:
         print(f"Error in authenticate: {e}")
         return None
@@ -33,10 +35,18 @@ def identity(payload):
         user_id = payload['identity']
         userfrombd = controlador_usuarios.obtener_user_por_id(user_id)
         if userfrombd:
-            return User(userfrombd['usuario'], userfrombd['usuario'], userfrombd['password_hash'])
+            return User(userfrombd.usuario, userfrombd.usuario, userfrombd.password_hash)
     except Exception as e:
         print(f"Error in identity: {e}")
         return None
+
+def generate_token(user):
+    payload = {
+        'identity': user.id,
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    }
+    token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+    return token
 
 ##### SEGURIDAD - FIN #####
 
@@ -85,7 +95,10 @@ def api_confirmarusuario_p3():
         print(f"Usuario: {usuario}, Código de Verificación: {codeverify}")
 
         if controlador_usuarios.verificar_codigo(usuario, codeverify):
-            return jsonify({"code": 1, "data": {}, "message": "Usuario verificado correctamente"})
+            user = controlador_usuarios.obtener_user_por_username(usuario)
+            token = generate_token(user)
+            controlador_usuarios.actualizartoken_user(usuario, token)
+            return jsonify({"code": 1, "data": {"token": token}, "message": "Usuario verificado correctamente"})
         else:
             print(f"Código de verificación incorrecto para el usuario: {usuario}")
             return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
@@ -109,7 +122,7 @@ def api_listarusuarios_p3():
             "message": "Listado correcto de usuarios"
         })
     except Exception as e:
-        print(f"Error in api_listarusuarios_p3: {e}")
+        print(f"Error en api_listarusuarios_p3: {e}")
         return jsonify({
             "code": 0,
             "message": "Error al listar usuarios"
@@ -141,7 +154,7 @@ def discos():
         username = request.cookies.get('username')
         token = request.cookies.get('token')
         user = controlador_usuarios.obtener_user_por_username(username)
-        if user and user['token'] == token:
+        if user and user.token == token:
             discos = controlador_discos.obtener_discos()
             return render_template("discos.html", discos=discos)
         else:
@@ -195,7 +208,7 @@ def procesar_login():
         password = request.form["password"]
         epassword = sha256(password.encode("utf-8")).hexdigest()
         user = controlador_usuarios.obtener_user_por_username(username)
-        if user and user['password_hash'] == epassword:
+        if user and user.password_hash == epassword:
             aleatorio = str(random.randint(1, 1024))
             token = sha256(aleatorio.encode("utf-8")).hexdigest()
             resp = make_response(redirect("/discos"))

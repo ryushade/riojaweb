@@ -1,4 +1,5 @@
 from bd import obtener_conexion
+from clases.clase_usuario import clsUsuario
 
 def obtener_user_por_username(username):
     try:
@@ -6,8 +7,10 @@ def obtener_user_por_username(username):
         user = None
         with conexion.cursor() as cursor:
             cursor.execute("SELECT usuario, password_hash, codigo_verificacion, estado_verificado, token FROM usuarios WHERE usuario = %s", (username,))
-            user = cursor.fetchone()
+            user_data = cursor.fetchone()
         conexion.close()
+        if user_data:
+            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
         return user
     except Exception as e:
         print(f"Error en obtener_user_por_username: {e}")
@@ -19,8 +22,10 @@ def obtener_user_por_id(user_id):
         user = None
         with conexion.cursor() as cursor:
             cursor.execute("SELECT usuario, password_hash, estado_verificado FROM usuarios WHERE id = %s", (user_id,))
-            user = cursor.fetchone()
+            user_data = cursor.fetchone()
         conexion.close()
+        if user_data:
+            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
         return user
     except Exception as e:
         print(f"Error en obtener_user_por_id: {e}")
@@ -72,16 +77,28 @@ def verificar_codigo(username, codeverify):
         print(f"Error en verificar_codigo: {e}")
         return False
 
-
 def obtener_usuarios_verificados():
     try:
         conexion = obtener_conexion()
         users = []
         with conexion.cursor() as cursor:
             cursor.execute("SELECT usuario, password_hash FROM usuarios WHERE estado_verificado = %s", (True,))
-            users = cursor.fetchall()
+            users_data = cursor.fetchall()
         conexion.close()
+        for user_data in users_data:
+            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
+            users.append(user.dic_usuario)
         return users
     except Exception as e:
         print(f"Error en obtener_usuarios_verificados: {e}")
         return []
+
+def actualizartoken_user(username, token):
+    try:
+        conexion = obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("UPDATE usuarios SET token = %s WHERE usuario = %s", (token, username))
+        conexion.commit()
+        conexion.close()
+    except Exception as e:
+        print(f"Error en actualizartoken_user: {e}")
