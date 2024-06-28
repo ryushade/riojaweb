@@ -1,5 +1,7 @@
 from bd import obtener_conexion
 from clases.clase_usuario import clsUsuario
+import secrets
+import string
 
 def obtener_user_por_username(username):
     try:
@@ -31,9 +33,14 @@ def obtener_user_por_id(user_id):
         print(f"Error en obtener_user_por_id: {e}")
         return None
 
-def registrar_usuario(username, hashed_password, codigo_verificacion):
+def generar_codigo_verificacion():
+    # Generar un código de verificación aleatorio de longitud 6
+    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(6))
+
+def registrar_usuario(username, hashed_password):
     try:
         conexion = obtener_conexion()
+        codigo_verificacion = generar_codigo_verificacion()
         user_id = None
         with conexion.cursor() as cursor:
             cursor.execute("INSERT INTO usuarios (usuario, password_hash, codigo_verificacion, estado_verificado) VALUES (%s, %s, %s, %s)", 
@@ -41,10 +48,10 @@ def registrar_usuario(username, hashed_password, codigo_verificacion):
             user_id = cursor.lastrowid
         conexion.commit()
         conexion.close()
-        return user_id
+        return user_id, codigo_verificacion
     except Exception as e:
         print(f"Error en registrar_usuario: {e}")
-        return None
+        return None, None
 
 def guardar_codigo_verificacion(user_id, codeverify):
     try:
