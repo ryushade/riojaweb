@@ -1,128 +1,63 @@
 from bd import obtener_conexion
-from clases.clase_usuario import clsUsuario
-import secrets
-import string
+import random
+import hashlib
 
-def obtener_user_por_username(username):
-    try:
-        conexion = obtener_conexion()
-        user = None
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT usuario, password_hash, codigo_verificacion, estado_verificado, token FROM usuarios WHERE usuario = %s", (username,))
-            user_data = cursor.fetchone()
-        conexion.close()
-        if user_data:
-            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
-        return user
-    except Exception as e:
-        print(f"Error en obtener_user_por_username: {e}")
-        return None
+def generar_codverificacion():
+    return random.randint(100000, 999999)
 
-def obtener_user_por_id(user_id):
-    try:
-        conexion = obtener_conexion()
-        user = None
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT usuario, password_hash, estado_verificado FROM usuarios WHERE id = %s", (user_id,))
-            user_data = cursor.fetchone()
-        conexion.close()
-        if user_data:
-            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
-        return user
-    except Exception as e:
-        print(f"Error en obtener_user_por_id: {e}")
-        return None
+def encript_passw(passw):
+    return hashlib.sha256(passw.encode()).hexdigest()
 
-def generar_codigo_verificacion():
-    # Generar un código de verificación aleatorio de longitud 6
-    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(6))
-
-def registrar_usuario(username, hashed_password, codigo_verificacion):
-    try:
-        conexion = obtener_conexion()
-        user_id = None
-        with conexion.cursor() as cursor:
-            cursor.execute("INSERT INTO usuarios (usuario, password_hash, codigo_verificacion, estado_verificado) VALUES (%s, %s, %s, %s)", 
-                           (username, hashed_password, int(codigo_verificacion), False))
-            user_id = cursor.lastrowid
-        conexion.commit()
-        conexion.close()
-        return user_id
-    except Exception as e:
-        print(f"Error en registrar_usuario: {e}")
-        return None
+def insertar_usuario(username, passw):
+    codeverify=generar_codverificacion()
+    estado="I"
+    epassw=encript_passw(passw)
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("INSERT INTO usuarios(username, passw, codeverify, estado) values (%s, %s, %s, %s)",
+                        (username, epassw, codeverify, estado))
+    conexion.commit()
+    conexion.close()
+    return codeverify
 
 
-def guardar_codigo_verificacion(user_id, codeverify):
-    try:
-        conexion = obtener_conexion()
-        with conexion.cursor() as cursor:
-            cursor.execute("UPDATE usuarios SET codigo_verificacion = %s WHERE id = %s", (codeverify, user_id))
-        conexion.commit()
-        conexion.close()
-    except Exception as e:
-        print(f"Error en guardar_codigo_verificacion: {e}")
+def verificar_usuario(username, codeverify):
+    conexion = obtener_conexion()
+    with conexion.cursor() as cursor:
+        cursor.execute("SELECT * FROM usuarios WHERE username = %s AND codeverify = %s", (username, codeverify))
+        user = cursor.fetchone()
+        if user:
+            cursor.execute("UPDATE usuarios SET estado = %s WHERE username = %s", ("A", username))
+            conexion.commit()
+            return True
+        else:
+            return False
 
-def verificar_codigo(username, codeverify):
-    try:
-        conexion = obtener_conexion()
-        verificado = False
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
-            user = cursor.fetchone()
+def listarusuarios():
+    conexion = obtener_conexion()
+    usuarios = []
+    with conexion.cursor() as cursor:
+        cursor.execute("SELECT* FROM usuarios where estado='A'")
+        usuarios = cursor.fetchall()
+    conexion.close()
+    return usuarios
 
-            # Convertir a int si es necesario para asegurar la comparación correcta
-            if user and int(user['codigo_verificacion']) == int(codeverify):
-                cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
-                verificado = True
-        conexion.commit()
-        conexion.close()
-        return verificado
-    except Exception as e:
-        print(f"Error en verificar_codigo: {e}")
-        return False
-    
-def verificar_codigo(username, codeverify):
-    try:
-        conexion = obtener_conexion()
-        verificado = False
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT codigo_verificacion FROM usuarios WHERE usuario = %s", (username,))
-            user = cursor.fetchone()
+def obtener_usuario_por_username(username):
+    conexion = obtener_conexion()
+    user = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, username, passw FROM usuarios where username = %s and estado='A'", (username,))
+        user = cursor.fetchone()
+    conexion.close()
+    return user
 
-            if user and int(user['codigo_verificacion']) == int(codeverify):
-                cursor.execute("UPDATE usuarios SET estado_verificado = %s WHERE usuario = %s", (True, username))
-                verificado = True
-        conexion.commit()
-        conexion.close()
-        return verificado
-    except Exception as e:
-        print(f"Error en verificar_codigo: {e}")
-        return False
-
-
-def obtener_usuarios_verificados():
-    try:
-        conexion = obtener_conexion()
-        users = []
-        with conexion.cursor() as cursor:
-            cursor.execute("SELECT usuario, password_hash FROM usuarios WHERE estado_verificado = %s", (True,))
-            users_data = cursor.fetchall()
-        conexion.close()
-        for user_data in users_data:
-            user = clsUsuario(user_data['usuario'], user_data['password_hash'], user_data['codigo_verificacion'], user_data['estado_verificado'], user_data['token'])
-            users.append(user.dic_usuario)
-        return users
-    except Exception as e:
-        print(f"Error en obtener_usuarios_verificados: {e}")
-        return []
-
-def actualizartoken_user(username, token):
-    try:
-        conexion = obtener_conexion()
-        with conexion.cursor() as cursor:
-            cursor.execute("UPDATE usuarios SET token = %s WHERE usuario = %s", (token, username))
-        conexion.commit()
-        conexion.close()
-    except Exception as e:
-        print(f"Error en actualizartoken_user: {e}")
+def obtener_usuario_por_id(id):
+    conexion = obtener_conexion()
+    user = None
+    with conexion.cursor() as cursor:
+        cursor.execute(
+            "SELECT id, username, passw FROM usuarios WHERE id = %s", (id,))
+        user = cursor.fetchone()
+    conexion.close()
+    return user
