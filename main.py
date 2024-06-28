@@ -47,12 +47,18 @@ jwt = JWT(app, authenticate, identity)
 def api_registrarusuario_p3():
     try:
         data = request.get_json()
+        print(f"Datos recibidos: {data}")
         usuario = data['usuario']
         password = data['pass']
         hashed_password = sha256(password.encode()).hexdigest()
+        print(f"Usuario: {usuario}, Hashed Password: {hashed_password}")
+
         user_id = controlador_usuarios.registrar_usuario(usuario, hashed_password)
+        print(f"ID de usuario registrado: {user_id}")
+
         codeverify = random.randint(100000, 999999)
         controlador_usuarios.guardar_codigo_verificacion(user_id, codeverify)
+        print(f"Código de verificación generado: {codeverify}")
 
         return jsonify({
             "code": 1,
@@ -63,10 +69,10 @@ def api_registrarusuario_p3():
             "message": "Usuario registrado correctamente"
         })
     except Exception as e:
-        print(f"Error in api_registrarusuario_p3: {e}")
+        print(f"Error en api_registrarusuario_p3: {e}")
         return jsonify({
             "code": 0,
-            "message": "Error al registrar usuario"
+            "message": f"Error al registrar usuario: {str(e)}"
         }), 500
 
 @app.route('/api_confirmarusuario_p3', methods=['POST'])
