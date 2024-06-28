@@ -87,37 +87,33 @@ def api_registrarusuario_p3():
 
 @app.route('/api_confirmarusuario_p3', methods=['POST'])
 def api_confirmarusuario_p3():
+    rpta = {}
     try:
-        data = request.get_json()
-        print(f"Datos recibidos: {data}")
-        
-        # Obtener datos del JSON
-        usuario = data['usuario']
-        codeverify = int(data['codeverify'])  # Convertir a entero
+        username = request.json.get("username")
+        codeverify = request.json.get("codeverify")
 
-        print(f"Usuario: {usuario}, Código de Verificación: {codeverify}")
-
-        # Verificar el código de verificación
-        if controlador_usuarios.verificar_codigo(usuario, codeverify):
-            # Obtener el usuario verificado
-            user = controlador_usuarios.obtener_user_por_username(usuario)
-
-            # Generar un nuevo token para el usuario
-            token = generate_token(user)
-
-            # Actualizar el token en la base de datos
-            controlador_usuarios.actualizartoken_user(usuario, token)
-
-            # Retornar respuesta JSON exitosa
-            return jsonify({"code": 1, "data": {"token": token}, "message": "Usuario verificado correctamente"})
+        if username and codeverify:
+            # Llamar a la función para verificar el usuario
+            if controlador_usuarios.verificar_usuario(username, codeverify):
+                rpta["code"] = 1
+                rpta["data"] = {}
+                rpta["message"] = "Usuario verificado correctamente"
+            else:
+                rpta["code"] = 0
+                rpta["data"] = {}
+                rpta["message"] = "Código de verificación incorrecto para el usuario"
         else:
-            # Si el código de verificación es incorrecto
-            print(f"Código de verificación incorrecto para el usuario: {usuario}")
-            return jsonify({"code": 0, "data": {}, "message": "Código de verificación incorrecto"})
+            rpta["code"] = 0
+            rpta["data"] = {}
+            rpta["message"] = "Faltan datos de usuario o código de verificación"
+
     except Exception as e:
-        # Manejar cualquier excepción y retornar un mensaje de error
-        print(f"Error en api_confirmarusuario_p3: {e}")
-        return jsonify({"code": 0, "message": f"Error al confirmar usuario: {str(e)}"}), 500
+        rpta["code"] = 0
+        rpta["data"] = {}
+        rpta["message"] = "Ocurrió un problema: " + repr(e)
+
+    return jsonify(rpta)
+
 
 @app.route('/api_listarusuarios_p3', methods=['GET'])
 @jwt_required()
